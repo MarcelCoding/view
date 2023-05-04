@@ -1,0 +1,8 @@
+[package]
+name = "view-migration"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sea-orm-migration = { version = "0.11", default-features = false, features = ["cli", "runtime-tokio-rustls", "sqlx-postgres"] }
+tokio = { version = "1.28", default-features = false, features = ["macros", "rt-multi-thread"] }

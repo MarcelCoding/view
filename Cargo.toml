@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "view",
+  "view-entity",
+  "view-management",
+  "view-migration",
+  "view-serve",
+]

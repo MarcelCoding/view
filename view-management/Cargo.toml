@@ -1,0 +1,10 @@
+[package]
+name = "view-management"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sea-orm = { version = "0.11", default-features = false }
+view-entity = { path = "../view-entity" }
+time = { version = "0.3", default-features = false }
+anyhow = "1.0"
