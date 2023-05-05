@@ -2,7 +2,6 @@ use std::convert::Infallible;
 use std::fmt::Write;
 use std::path::PathBuf;
 use std::task::{Context, Poll};
-use std::time::SystemTime;
 
 use futures_util::future::BoxFuture;
 use futures_util::FutureExt;

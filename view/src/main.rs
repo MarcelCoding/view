@@ -3,13 +3,13 @@ use std::future::Future;
 use std::path::{Path, PathBuf};
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use hyper::header::SERVER;
 
 use hyper::service::Service;
 use sea_orm::{Database, DatabaseConnection};
 use sea_orm_migration::MigratorTrait;
 use tower::ServiceBuilder;
 use tower_http::compression::{Compression, CompressionLayer};
+use view_management::{ManagementState, router};
 
 use view_migration::Migrator;
 use view_serve::FileService;
@@ -51,6 +51,18 @@ async fn main() -> anyhow::Result<()> {
       .await?;
 
   Migrator::up(&db, None).await?;
+
+  let state = ManagementState {
+    db: db.clone(),
+    root_dir: Path::new("G:\\Work\\IdeaProjects\\view\\data").to_owned(),
+  };
+
+  tokio::spawn(async move {
+    let addr = ([127, 0, 0, 1], 8081).into();
+    hyper::Server::bind(&addr)
+      .serve(router(state))
+      .await.unwrap();
+  });
 
   let file_service = MakeSvc {
     root_dir: Path::new("G:\\Work\\IdeaProjects\\view\\data").to_owned(),

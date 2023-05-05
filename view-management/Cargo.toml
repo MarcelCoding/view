@@ -8,3 +8,7 @@ sea-orm = { version = "0.11", default-features = false }
 view-entity = { path = "../view-entity" }
 time = { version = "0.3", default-features = false }
 anyhow = "1.0"
+
+tokio = { version = "1.28", default-features = false, features = ["fs", "io-util"] }
+axum = { version = "0.6", default-features = false, features = ["json", "macros", "multipart"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
