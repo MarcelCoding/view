@@ -5,9 +5,9 @@ use std::task::{Context, Poll};
 
 use futures_util::future::BoxFuture;
 use futures_util::FutureExt;
-use hyper::{Body, Method, Request, Response, StatusCode};
 use hyper::header::{CONTENT_TYPE, HOST};
 use hyper::service::Service;
+use hyper::{Body, Method, Request, Response, StatusCode};
 use sea_orm::{
   ColumnTrait, Condition, DatabaseConnection, EntityTrait, JoinType, QueryFilter, QuerySelect,
   RelationTrait, Select,
@@ -19,7 +19,7 @@ use tokio_util::codec::FramedRead;
 use view_entity::{commit, environment, file, object};
 
 fn find_object(domain: &str, path: &str) -> Select<object::Entity> {
-  let select = object::Entity::find()
+  object::Entity::find()
     .join(JoinType::InnerJoin, object::Relation::File.def())
     .join(JoinType::InnerJoin, file::Relation::Commit.def())
     .join(JoinType::InnerJoin, commit::Relation::Environment.def())
@@ -27,9 +27,7 @@ fn find_object(domain: &str, path: &str) -> Select<object::Entity> {
       Condition::all()
         .add(file::Column::Path.eq(path))
         .add(environment::Column::Domain.eq(domain)),
-    );
-
-  select
+    )
 }
 
 pub struct FileService {
@@ -47,7 +45,6 @@ impl Service<Request<Body>> for FileService {
   }
 
   fn call(&mut self, req: Request<Body>) -> Self::Future {
-
     let host = req
       .headers()
       .get(HOST)
@@ -121,6 +118,6 @@ impl Service<Request<Body>> for FileService {
 
       Ok(response)
     }
-      .boxed()
+    .boxed()
   }
 }

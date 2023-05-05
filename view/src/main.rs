@@ -9,7 +9,7 @@ use sea_orm::{Database, DatabaseConnection};
 use sea_orm_migration::MigratorTrait;
 use tower::ServiceBuilder;
 use tower_http::compression::{Compression, CompressionLayer};
-use view_management::{ManagementState, router};
+use view_management::{router, ManagementState};
 
 use view_migration::Migrator;
 use view_serve::FileService;
@@ -22,7 +22,7 @@ pub struct MakeSvc {
 impl<T> Service<T> for MakeSvc {
   type Response = Compression<FileService>;
   type Error = Infallible;
-  type Future = Pin<Box<dyn Future<Output=Result<Self::Response, Self::Error>> + Send>>;
+  type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
   fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
     Ok(()).into()
@@ -35,9 +35,11 @@ impl<T> Service<T> for MakeSvc {
     };
 
     let fut = async {
-      Ok(ServiceBuilder::new()
-        .layer(CompressionLayer::new())
-        .service(src))
+      Ok(
+        ServiceBuilder::new()
+          .layer(CompressionLayer::new())
+          .service(src),
+      )
     };
 
     Box::pin(fut)
@@ -61,7 +63,8 @@ async fn main() -> anyhow::Result<()> {
     let addr = ([127, 0, 0, 1], 8081).into();
     hyper::Server::bind(&addr)
       .serve(router(state))
-      .await.unwrap();
+      .await
+      .unwrap();
   });
 
   let file_service = MakeSvc {
@@ -69,8 +72,7 @@ async fn main() -> anyhow::Result<()> {
     db,
   };
 
-  let service = ServiceBuilder::new()
-    .service(file_service);
+  let service = ServiceBuilder::new().service(file_service);
 
   let addr = ([127, 0, 0, 1], 8080).into();
   let server = hyper::Server::bind(&addr).serve(service);
