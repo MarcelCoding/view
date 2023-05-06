@@ -140,6 +140,12 @@ async fn object_endpoint(
   }
 
   let path = root_dir.join(&input_id[0..2]).join(&input_id[2..]);
+  if let Some(parent) = path.parent() {
+    if !tokio::fs::try_exists(parent).await? {
+      tokio::fs::create_dir(parent).await?;
+    }
+  }
+
   let mut file = File::create(path).await?;
 
   let mut field = multipart
