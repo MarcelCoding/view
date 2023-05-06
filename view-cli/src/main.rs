@@ -2,15 +2,15 @@ use std::path::PathBuf;
 
 use clap::Parser;
 use hex_buffer_serde::{Hex, HexForm};
-use reqwest::{Body, Client};
 use reqwest::multipart::{Form, Part};
+use reqwest::{Body, Client};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 use tokio_util::codec::{BytesCodec, FramedRead};
-use tracing::{info, Level, warn};
+use tracing::{info, warn, Level};
 use tracing_subscriber::FmtSubscriber;
 
 use url::Url;
@@ -74,7 +74,9 @@ async fn main() -> anyhow::Result<()> {
     let mut buf = String::new();
     for component in path.components() {
       buf.push('/');
-      buf.push_str(&*urlencoding::encode(&*component.as_os_str().to_string_lossy()));
+      buf.push_str(&urlencoding::encode(
+        &component.as_os_str().to_string_lossy(),
+      ));
     }
 
     files.push(FileObj {
@@ -111,7 +113,12 @@ async fn main() -> anyhow::Result<()> {
     if let Some(object) = files.iter().find(|object| object.object_id == object_id) {
       info!("Uploading {}...", object.path);
 
-      let file = File::open(args.upload_dir.join(&*urlencoding::decode(&object.path[1..])?)).await?;
+      let file = File::open(
+        args
+          .upload_dir
+          .join(&*urlencoding::decode(&object.path[1..])?),
+      )
+      .await?;
       let len = file.metadata().await?.len();
 
       let stream = FramedRead::new(file, BytesCodec::new());

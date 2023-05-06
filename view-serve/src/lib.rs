@@ -5,13 +5,15 @@ use std::task::{Context, Poll};
 
 use futures_util::future::BoxFuture;
 use futures_util::FutureExt;
-use hyper::header::{CONTENT_TYPE, HOST};
+use hyper::header::{CONTENT_TYPE, HOST, IF_MODIFIED_SINCE, LAST_MODIFIED};
 use hyper::service::Service;
 use hyper::{Body, Method, Request, Response, StatusCode};
 use sea_orm::{
   ColumnTrait, Condition, DatabaseConnection, EntityTrait, JoinType, QueryFilter, QuerySelect,
   RelationTrait, Select,
 };
+use time::format_description::well_known::Rfc2822;
+use time::{OffsetDateTime, UtcOffset};
 use tokio::fs::File;
 use tokio_util::codec::BytesCodec;
 use tokio_util::codec::FramedRead;
@@ -72,6 +74,33 @@ impl Service<Request<Body>> for FileService {
 
       let response = match object {
         Ok(Some(object)) => {
+          if let Some(modified_since) = req
+            .headers()
+            .get(IF_MODIFIED_SINCE)
+            .and_then(|value| String::from_utf8(value.as_bytes().to_vec()).ok())
+          {
+            match OffsetDateTime::parse(&modified_since, &Rfc2822) {
+              Ok(modified_since) => {
+                if modified_since >= object.created {
+                  return Ok(
+                    Response::builder()
+                      .status(StatusCode::NOT_MODIFIED)
+                      .body(Body::empty())
+                      .unwrap(),
+                  );
+                }
+              }
+              Err(_) => {
+                return Ok(
+                  Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(Body::empty())
+                    .unwrap(),
+                )
+              }
+            }
+          }
+
           let mut buf = String::with_capacity(object.id.len() * 2);
           let mut first = true;
 
@@ -83,6 +112,7 @@ impl Service<Request<Body>> for FileService {
             }
           }
 
+          let mime = mime_guess::from_path(path).first_or_octet_stream();
           let path = root_dir.join(buf);
           match File::open(&path).await {
             Ok(file) => {
@@ -90,7 +120,16 @@ impl Service<Request<Body>> for FileService {
               let body = Body::wrap_stream(stream);
 
               Response::builder()
-                .header(CONTENT_TYPE, "text/html")
+                .header(CONTENT_TYPE, mime.essence_str())
+                .header(LAST_MODIFIED, {
+                  let utc_date_time = object
+                    .created
+                    .to_offset(UtcOffset::UTC)
+                    .format(&Rfc2822)
+                    .unwrap();
+                  let utc_date_time = &utc_date_time[..utc_date_time.len() - 5];
+                  format!("{}GMT", utc_date_time)
+                })
                 .body(body)
                 .unwrap()
             }

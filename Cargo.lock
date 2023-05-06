@@ -914,6 +914,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-rustls"
+version = "0.23.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1788965e61b367cd03a62950836d5cd41560c3577d90e40e0819373194d1661c"
+dependencies = [
+ "http",
+ "hyper",
+ "rustls",
+ "tokio",
+ "tokio-rustls",
+]
+
+[[package]]
 name = "iana-time-zone"
 version = "0.1.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1036,9 +1049,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.142"
+version = "0.2.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6a987beff54b60ffa6d51982e1aa1146bc42f19bd26be28b0586f252fccf5317"
+checksum = "edc207893e85c5d6be840e969b496b53d94cec8be2d501b214f50daa97fa8024"
 
 [[package]]
 name = "link-cplusplus"
@@ -1473,6 +1486,7 @@ dependencies = [
  "http",
  "http-body",
  "hyper",
+ "hyper-rustls",
  "ipnet",
  "js-sys",
  "log",
@@ -1481,10 +1495,13 @@ dependencies = [
  "once_cell",
  "percent-encoding",
  "pin-project-lite",
+ "rustls",
+ "rustls-pemfile",
  "serde",
  "serde_json",
  "serde_urlencoded",
  "tokio",
+ "tokio-rustls",
  "tokio-util",
  "tower-service",
  "url",
@@ -1492,6 +1509,7 @@ dependencies = [
  "wasm-bindgen-futures",
  "wasm-streams",
  "web-sys",
+ "webpki-roots",
  "winreg",
 ]
 
@@ -2060,9 +2078,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.20"
+version = "0.3.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd0cbfecb4d19b5ea75bb31ad904eb5b9fa13f21079c3b92017ebdf4999a5890"
+checksum = "8f3403384eaacbca9923fa06940178ac13e4edb725486d70e8e15881d0c836cc"
 dependencies = [
  "itoa",
  "serde",
@@ -2072,15 +2090,15 @@ dependencies = [
 
 [[package]]
 name = "time-core"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e153e1f1acaef8acc537e68b44906d2db6436e2b35ac2c6b42640fff91f00fd"
+checksum = "7300fbefb4dadc1af235a9cef3737cea692a9d97e1b9cbcd4ebdae6f8868e6fb"
 
 [[package]]
 name = "time-macros"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd80a657e71da814b8e5d60d3374fc6d35045062245d80224748ae522dd76f36"
+checksum = "372950940a5f07bf38dbe211d7283c9e6d7327df53794992d293e534c733d09b"
 dependencies = [
  "time-core",
 ]
@@ -2365,15 +2383,18 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 
 [[package]]
 name = "view"
-version = "0.1.0"
+version = "0.0.0-git"
 dependencies = [
  "anyhow",
+ "clap 4.2.7",
  "hyper",
  "sea-orm",
  "sea-orm-migration",
  "tokio",
  "tower",
  "tower-http",
+ "tracing",
+ "tracing-subscriber",
  "view-management",
  "view-migration",
  "view-serve",
@@ -2381,7 +2402,7 @@ dependencies = [
 
 [[package]]
 name = "view-cli"
-version = "0.1.0"
+version = "0.0.0-git"
 dependencies = [
  "anyhow",
  "clap 4.2.7",
@@ -2400,7 +2421,7 @@ dependencies = [
 
 [[package]]
 name = "view-entity"
-version = "0.1.0"
+version = "0.0.0-git"
 dependencies = [
  "sea-orm",
  "time",
@@ -2409,7 +2430,7 @@ dependencies = [
 
 [[package]]
 name = "view-management"
-version = "0.1.0"
+version = "0.0.0-git"
 dependencies = [
  "anyhow",
  "axum",
@@ -2424,7 +2445,7 @@ dependencies = [
 
 [[package]]
 name = "view-migration"
-version = "0.1.0"
+version = "0.0.0-git"
 dependencies = [
  "sea-orm-migration",
  "tokio",
@@ -2432,11 +2453,14 @@ dependencies = [
 
 [[package]]
 name = "view-serve"
-version = "0.1.0"
+version = "0.0.0-git"
 dependencies = [
  "futures-util",
+ "hex",
  "hyper",
+ "mime_guess",
  "sea-orm",
+ "time",
  "tokio",
  "tokio-util",
  "view-entity",

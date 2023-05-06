@@ -1,17 +1,19 @@
 [package]
 name = "view"
-version = "0.1.0"
+version = "0.0.0-git"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.28", default-features = false, features = ["macros", "rt-multi-thread"] }
-hyper = { version = "0.14", default-features = false, features = ["server", "runtime", "http1"] }
-anyhow = "1.0"
-tower = { version = "0.4", default-features = false, features = ["util"] }
-view-serve = { path = "../view-serve" }
-view-migration = { path = "../view-migration" }
-view-management = { path = "../view-management" }
 tower-http = { version = "0.4", default-features = false, features = ["compression-br", "compression-deflate", "compression-gzip", "compression-zstd"] }
-
 sea-orm = { version = "0.11", default-features = false, features = ["sqlx-postgres", "runtime-tokio-rustls"] }
+hyper = { version = "0.14", default-features = false, features = ["server", "runtime", "http1"] }
+tokio = { version = "1.28", default-features = false, features = ["macros", "rt-multi-thread"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
+tracing = { version = "0.1", default-features = false, features = ["release_max_level_info"] }
+tower = { version = "0.4", default-features = false, features = ["util"] }
 sea-orm-migration = { version = "0.11", default-features = false }
+clap = { version = "4.2", features = ["env", "derive"] }
+view-management = { path = "../view-management" }
+view-migration = { path = "../view-migration" }
+view-serve = { path = "../view-serve" }
+anyhow = "1.0"
