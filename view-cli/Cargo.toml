@@ -1,0 +1,19 @@
+[package]
+name = "view-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.28", default-features = false, features = ["macros", "rt-multi-thread", "fs", "process"] }
+reqwest = { version = "0.11", default-features = false, features = ["json", "multipart", "stream"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
+tracing = { version = "0.1", default-features = false, features = ["release_max_level_info"] }
+tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+url = { version = "2.3", default-features = false, features = ["serde"] }
+clap = { version = "4.2", features = ["env", "derive"] }
+hex-buffer-serde = "0.4"
+urlencoding = "2.1"
+anyhow = "1.0"
+sha2 = "0.10"
+hex = "0.4"

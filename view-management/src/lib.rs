@@ -27,8 +27,8 @@ pub struct ManagementState {
 
 pub fn router(state: ManagementState) -> IntoMakeService<Router<(), Body>> {
   Router::new()
-    .route("/commit/:id", put(commit))
-    .route("/object/:id", put(object))
+    .route("/v1/commit/:id", put(commit))
+    .route("/v1/object/:id", put(object))
     .with_state(state)
     .into_make_service()
 }

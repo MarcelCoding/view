@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "view",
+  "view-cli",
   "view-entity",
   "view-management",
   "view-migration",
