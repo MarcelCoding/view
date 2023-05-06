@@ -1,17 +1,17 @@
 use std::path::PathBuf;
 
 use anyhow::anyhow;
-use axum::{debug_handler, Json, Router};
 use axum::body::Body;
 use axum::extract::{Multipart, Path, State};
 use axum::http::StatusCode;
-use axum::routing::{IntoMakeService, put};
+use axum::routing::{put, IntoMakeService};
+use axum::{debug_handler, Json, Router};
 use hex::FromHex;
 use hex_buffer_serde::{Hex, HexForm};
+use sea_orm::ActiveValue::Set;
 use sea_orm::{
   DatabaseConnection, DatabaseTransaction, EntityTrait, PaginatorTrait, TransactionTrait,
 };
-use sea_orm::ActiveValue::Set;
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::fs::File;
@@ -33,15 +33,9 @@ pub fn router(state: ManagementState) -> IntoMakeService<Router<(), Body>> {
     .into_make_service()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 struct FileData {
   path: String,
-  #[serde(with = "HexForm")]
-  object_id: [u8; 32],
-}
-
-#[derive(Serialize)]
-struct CommitOut {
   #[serde(with = "HexForm")]
   object_id: [u8; 32],
 }
@@ -51,7 +45,7 @@ async fn commit(
   State(state): State<ManagementState>,
   Path(id): Path<String>,
   Json(files): Json<Vec<FileData>>,
-) -> Result<Json<Vec<CommitOut>>, StatusCode> {
+) -> Result<Json<Vec<FileData>>, StatusCode> {
   let result = match state.db.begin().await {
     Ok(tx) => match commit_endpoint(&tx, id, files).await {
       Ok(result) => {
@@ -64,7 +58,7 @@ async fn commit(
   };
 
   match result {
-    Ok(result) => Ok(Json(result.iter().map(|object_id| CommitOut { object_id: *object_id }).collect())),
+    Ok(result) => Ok(Json(result)),
     Err(err) => {
       eprint!("Error: {:?}", err);
       Err(StatusCode::INTERNAL_SERVER_ERROR)
@@ -76,7 +70,7 @@ async fn commit_endpoint(
   tx: &DatabaseTransaction,
   input_id: String,
   files: Vec<FileData>,
-) -> anyhow::Result<Vec<[u8; 32]>> {
+) -> anyhow::Result<Vec<FileData>> {
   let id = <[u8; 20]>::from_hex(input_id)?;
 
   let commit = commit::ActiveModel {
@@ -93,8 +87,6 @@ async fn commit_endpoint(
       .await?
       == 0;
 
-    println!("{}", object_is_new);
-
     if object_is_new {
       let object = object::ActiveModel {
         id: Set(file.object_id.to_vec()),
@@ -102,7 +94,7 @@ async fn commit_endpoint(
       };
 
       object::Entity::insert(object).exec(tx).await?;
-      objects_to_upload.push(file.object_id);
+      objects_to_upload.push(file.clone());
     }
 
     let file = file::ActiveModel {
