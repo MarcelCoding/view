@@ -14,7 +14,7 @@ use tower_http::compression::{Compression, CompressionLayer};
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
-use view_management::{ManagementState, router};
+use view_management::{router, ManagementState};
 use view_migration::Migrator;
 use view_serve::FileService;
 
@@ -26,7 +26,7 @@ pub struct MakeSvc {
 impl<T> Service<T> for MakeSvc {
   type Response = Compression<FileService>;
   type Error = Infallible;
-  type Future = Pin<Box<dyn Future<Output=Result<Self::Response, Self::Error>> + Send>>;
+  type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
   fn poll_ready(&mut self, _cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
     Ok(()).into()
@@ -91,12 +91,11 @@ async fn main() -> anyhow::Result<()> {
   };
 
   tokio::spawn(async move {
-    let mgnt = hyper::Server::bind(&args.mgnt_addr)
-      .serve(router(state));
+    let mgnt = hyper::Server::bind(&args.mgnt_addr).serve(router(state));
 
     info!("Management is listening on http://{}...", args.mgnt_addr);
 
-    mgnt      .await      .unwrap();
+    mgnt.await.unwrap();
   });
 
   let file_service = MakeSvc {

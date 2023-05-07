@@ -7,7 +7,7 @@ use axum::http::StatusCode;
 use axum::routing::{put, IntoMakeService};
 use axum::{debug_handler, Json, Router};
 use hex::FromHex;
-use hex_buffer_serde::{Hex, HexForm};
+use hex_buffer_serde::{ConstHex, ConstHexForm};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
   DatabaseConnection, DatabaseTransaction, EntityTrait, PaginatorTrait, TransactionTrait,
@@ -33,10 +33,16 @@ pub fn router(state: ManagementState) -> IntoMakeService<Router<(), Body>> {
     .into_make_service()
 }
 
+#[derive(Deserialize, Clone)]
+struct CommitData {
+  description: String,
+  files: Vec<FileData>,
+}
+
 #[derive(Deserialize, Serialize, Clone)]
 struct FileData {
   path: String,
-  #[serde(with = "HexForm")]
+  #[serde(with = "ConstHexForm")]
   object_id: [u8; 32],
 }
 
@@ -44,10 +50,10 @@ struct FileData {
 async fn commit(
   State(state): State<ManagementState>,
   Path(id): Path<String>,
-  Json(files): Json<Vec<FileData>>,
+  Json(commit): Json<CommitData>,
 ) -> Result<Json<Vec<FileData>>, StatusCode> {
   let result = match state.db.begin().await {
-    Ok(tx) => match commit_endpoint(&tx, id, files).await {
+    Ok(tx) => match commit_endpoint(&tx, id, commit).await {
       Ok(result) => {
         tx.commit().await.unwrap();
         Ok(result)
@@ -69,19 +75,21 @@ async fn commit(
 async fn commit_endpoint(
   tx: &DatabaseTransaction,
   input_id: String,
-  files: Vec<FileData>,
+  commit_data: CommitData,
 ) -> anyhow::Result<Vec<FileData>> {
   let id = <[u8; 20]>::from_hex(input_id)?;
 
   let commit = commit::ActiveModel {
     id: Set(id.to_vec()),
+    description: Set(commit_data.description),
+    created: Set(OffsetDateTime::now_utc()),
   };
 
   commit::Entity::insert(commit).exec(tx).await?;
 
   let mut objects_to_upload = Vec::new();
 
-  for file in files {
+  for file in commit_data.files {
     let object_is_new = object::Entity::find_by_id(file.object_id.to_vec())
       .count(tx)
       .await?

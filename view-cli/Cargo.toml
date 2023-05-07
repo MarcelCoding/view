@@ -8,10 +8,10 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "mul
 tokio = { version = "1.28", default-features = false, features = ["macros", "rt-multi-thread", "fs", "process"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "ansi"] }
 tracing = { version = "0.1", default-features = false, features = ["release_max_level_info"] }
+hex-buffer-serde = { version = "0.4", default-features = false, features = ["const_len"] }
 tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 url = { version = "2.3", default-features = false, features = ["serde"] }
-hex-buffer-serde = { version = "0.4", default-features = false }
 urlencoding = { version = "2.1", default-features = false }
 clap = { version = "4.2", features = ["env", "derive"] }
 sha2 = { version = "0.10", default-features = false }

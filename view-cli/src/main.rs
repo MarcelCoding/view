@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::Parser;
-use hex_buffer_serde::{Hex, HexForm};
+use hex_buffer_serde::{ConstHex, ConstHexForm};
 use reqwest::multipart::{Form, Part};
 use reqwest::{Body, Client};
 use serde::{Deserialize, Serialize};
@@ -25,10 +25,16 @@ struct Args {
   upload_dir: PathBuf,
 }
 
-#[derive(Serialize, Deserialize)]
-struct FileObj {
+#[derive(Serialize, Clone)]
+struct CommitData<'a> {
+  description: String,
+  files: &'a [FileData],
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+struct FileData {
   path: String,
-  #[serde(with = "HexForm")]
+  #[serde(with = "ConstHexForm")]
   object_id: [u8; 32],
 }
 
@@ -79,7 +85,7 @@ async fn main() -> anyhow::Result<()> {
       ));
     }
 
-    files.push(FileObj {
+    files.push(FileData {
       path: buf,
       object_id: hasher.finalize().into(),
     });
@@ -97,19 +103,34 @@ async fn main() -> anyhow::Result<()> {
   let commit_id = commit_id.trim();
   info!("Publishing as commit {}...", commit_id);
 
+  let commit_description = String::from_utf8_lossy(
+    &Command::new("git")
+      .arg("log")
+      .arg("--format=%B")
+      .arg("-n")
+      .arg("1")
+      .arg(commit_id)
+      .output()
+      .await?
+      .stdout,
+  ).to_string();
+
   let client = Client::new();
 
   let objects_to_upload = client
     .put(args.url.join(&format!("v1/commit/{}", commit_id))?)
     .bearer_auth(&args.token)
-    .json(&files)
+    .json(&CommitData {
+      description: commit_description,
+      files: &files,
+    })
     .send()
     .await?
     .error_for_status()?
-    .json::<Vec<FileObj>>()
+    .json::<Vec<FileData>>()
     .await?;
 
-  for FileObj { object_id, .. } in objects_to_upload {
+  for FileData { object_id, .. } in objects_to_upload {
     if let Some(object) = files.iter().find(|object| object.object_id == object_id) {
       info!("Uploading {}...", object.path);
 

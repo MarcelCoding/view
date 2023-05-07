@@ -1,10 +1,14 @@
 use sea_orm::prelude::*;
+use time::OffsetDateTime;
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "commit")]
 pub struct Model {
   #[sea_orm(primary_key)]
   pub id: Vec<u8>, //[u8; 20],
+  #[sea_orm(column_type = "Text")]
+  pub description: String,
+  pub created: OffsetDateTime,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
