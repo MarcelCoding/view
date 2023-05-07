@@ -2,6 +2,8 @@ FROM lukemathwalker/cargo-chef:latest AS chef
 WORKDIR /view
 
 FROM chef AS planner
+ARG COMPONENT
+
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json --bin ${COMPONENT}
 
@@ -17,7 +19,6 @@ RUN cargo build --release --bin ${COMPONENT}
 
 # We do not need the Rust toolchain to run the binary!
 FROM debian:bullseye-slim AS runtime
-
 ARG COMPONENT
 
 ENV USER=${COMPONENT}
