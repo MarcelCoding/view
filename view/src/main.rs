@@ -55,7 +55,7 @@ impl<T> Service<T> for MakeSvc {
 struct Cli {
   #[clap(short, long, env = "VIEW_DB_URL", required_unless_present = "db_url_path")]
   db_url: Option<String>,
-  #[clap(long, env = "VIEW_DB_URL", required_unless_present = "db_url")]
+  #[clap(long, env = "VIEW_DB_URL_PATH", required_unless_present = "db_url")]
   db_url_path: Option<PathBuf>,
   #[clap(short, long, env = "VIEW_ROOT_DIR")]
   root_dir: PathBuf,
