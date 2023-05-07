@@ -53,6 +53,7 @@ impl<T> Service<T> for MakeSvc {
 }
 
 #[derive(Parser)]
+#[clap(version)]
 struct Cli {
   #[clap(short, long, env = "VIEW_DB_URL")]
   db_url: Url,
