@@ -13,6 +13,7 @@ tracing = { version = "0.1", default-features = false, features = ["release_max_
 tower = { version = "0.4", default-features = false, features = ["util"] }
 sea-orm-migration = { version = "0.11", default-features = false }
 clap = { version = "4.2", features = ["env", "derive"] }
+url = { version = "2.3", default-features = false }
 view-management = { path = "../view-management" }
 view-migration = { path = "../view-migration" }
 view-serve = { path = "../view-serve" }

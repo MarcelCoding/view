@@ -14,6 +14,7 @@ use tokio::io::AsyncReadExt;
 use tower::ServiceBuilder;
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
+use url::Url;
 
 use view_management::{ManagementState, router};
 use view_migration::Migrator;
@@ -53,10 +54,16 @@ impl<T> Service<T> for MakeSvc {
 
 #[derive(Parser)]
 struct Cli {
-  #[clap(short, long, env = "VIEW_DB_URL", required_unless_present = "db_url_path")]
-  db_url: Option<String>,
-  #[clap(long, env = "VIEW_DB_URL_PATH", required_unless_present = "db_url")]
-  db_url_path: Option<PathBuf>,
+  #[clap(short, long, env = "VIEW_DB_URL")]
+  db_url: Url,
+  #[clap(long, env = "VIEW_DB_USER", required_unless_present = "db_user_path")]
+  db_user: Option<String>,
+  #[clap(long, env = "VIEW_DB_USER_PATH", required_unless_present = "db_user")]
+  db_user_path: Option<PathBuf>,
+  #[clap(long, env = "VIEW_DB_PASS", required_unless_present = "db_pass_path")]
+  db_pass: Option<String>,
+  #[clap(long, env = "VIEW_DB_PASS_PATH", required_unless_present = "db_pass")]
+  db_pass_path: Option<PathBuf>,
   #[clap(short, long, env = "VIEW_ROOT_DIR")]
   root_dir: PathBuf,
   #[clap(short, long, env = "VIEW_SERVE_ADDR", default_value = "0.0.0.0:8080")]
@@ -88,17 +95,29 @@ async fn main() -> anyhow::Result<()> {
     "..."
   ));
 
-  let db_url = match cli.db_url_path {
+  let mut db_url = cli.db_url;
+
+  db_url.set_username(&(match cli.db_user_path {
     Some(path) => {
       let mut file = File::open(path).await?;
       let mut buf = String::new();
       file.read_to_string(&mut buf).await?;
       buf
     }
-    None => cli.db_url.unwrap(),
-  };
+    None => cli.db_user.unwrap(),
+  })).expect("DB URL is missing the base (protocol & host)");
 
-  let db = Database::connect(&db_url).await?;
+  db_url.set_password(Some(&(match cli.db_pass_path {
+    Some(path) => {
+      let mut file = File::open(path).await?;
+      let mut buf = String::new();
+      file.read_to_string(&mut buf).await?;
+      buf
+    }
+    None => cli.db_pass.unwrap(),
+  }))).expect("DB URL is missing the base (protocol & host)");
+
+  let db = Database::connect(db_url.as_str()).await?;
 
   Migrator::up(&db, None).await?;
 
