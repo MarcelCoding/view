@@ -18,7 +18,7 @@ pub(crate) struct DeployAction {
   #[clap(env = "VIEW_UPLOAD_DIR")]
   upload_dir: PathBuf,
   #[clap(short, long, env = "VIEW_FALLBACK_FILE")]
-  fallback_file: Vec<String>,
+  fallback: Vec<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -66,7 +66,7 @@ impl DeployAction {
       }
 
       files.push(FileData {
-        fallback: self.fallback_file.contains(&buf),
+        fallback: self.fallback.contains(&buf),
         path: buf,
         object_id: hasher.finalize().into(),
       });
