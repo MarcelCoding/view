@@ -91,6 +91,7 @@ impl DeployAction {
         .await?
         .stdout,
     )
+    .trim()
     .to_string();
 
     let client = Client::new();

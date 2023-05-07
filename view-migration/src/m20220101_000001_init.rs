@@ -37,8 +37,9 @@ impl MigrationTrait for Migration {
               .not_null()
               .primary_key(),
           )
+          .col(ColumnDef::new(Commit::Description).text().not_null())
           .col(
-            ColumnDef::new(Object::Created)
+            ColumnDef::new(Commit::Created)
               .timestamp_with_time_zone()
               .not_null(),
           )
@@ -157,6 +158,8 @@ enum File {
 enum Commit {
   Table,
   Id,
+  Description,
+  Created,
 }
 
 #[derive(Iden)]
