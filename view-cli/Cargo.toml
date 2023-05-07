@@ -11,9 +11,9 @@ tracing = { version = "0.1", default-features = false, features = ["release_max_
 tokio-util = { version = "0.7", default-features = false, features = ["codec"] }
 serde = { version = "1.0", default-features = false, features = ["derive"] }
 url = { version = "2.3", default-features = false, features = ["serde"] }
+hex-buffer-serde = { version = "0.4", default-features = false }
+urlencoding = { version = "2.1", default-features = false }
 clap = { version = "4.2", features = ["env", "derive"] }
-hex-buffer-serde = "0.4"
-urlencoding = "2.1"
+sha2 = { version = "0.10", default-features = false }
+hex = { version = "0.4", default-features = false }
 anyhow = "1.0"
-sha2 = "0.10"
-hex = "0.4"
