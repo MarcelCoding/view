@@ -10,7 +10,6 @@ use hyper::service::Service;
 use sea_orm::{Database, DatabaseConnection};
 use sea_orm_migration::MigratorTrait;
 use tower::ServiceBuilder;
-use tower_http::compression::{Compression, CompressionLayer};
 use tracing::{info, Level};
 use tracing_subscriber::FmtSubscriber;
 
@@ -24,7 +23,7 @@ pub struct MakeSvc {
 }
 
 impl<T> Service<T> for MakeSvc {
-  type Response = Compression<FileService>;
+  type Response = FileService;
   type Error = Infallible;
   type Future = Pin<Box<dyn Future<Output = Result<Self::Response, Self::Error>> + Send>>;
 
@@ -41,7 +40,7 @@ impl<T> Service<T> for MakeSvc {
     let fut = async {
       Ok(
         ServiceBuilder::new()
-          .layer(CompressionLayer::new())
+          // .layer(CompressionLayer::new())
           .service(src),
       )
     };

@@ -12,11 +12,11 @@ impl MigrationTrait for Migration {
           .table(Object::Table)
           .col(
             ColumnDef::new(Object::Id)
-              .binary()
               .binary_len(265)
               .not_null()
               .primary_key(),
           )
+          .col(ColumnDef::new(Object::Size).big_unsigned())
           .col(
             ColumnDef::new(Object::Created)
               .timestamp_with_time_zone()
@@ -32,7 +32,6 @@ impl MigrationTrait for Migration {
           .table(Commit::Table)
           .col(
             ColumnDef::new(Commit::Id)
-              .binary()
               .binary_len(20)
               .not_null()
               .primary_key(),
@@ -52,24 +51,10 @@ impl MigrationTrait for Migration {
         Table::create()
           .table(File::Table)
           .col(ColumnDef::new(File::Path).string().not_null())
-          .col(
-            ColumnDef::new(File::ObjectId)
-              .binary()
-              .binary_len(256)
-              .not_null(),
-          )
-          .col(
-            ColumnDef::new(File::CommitId)
-              .binary()
-              .binary_len(20)
-              .not_null(),
-          )
-          .primary_key(
-            Index::create()
-              .col(File::Path)
-              .col(File::ObjectId)
-              .col(File::CommitId),
-          )
+          .col(ColumnDef::new(File::Fallback).boolean())
+          .col(ColumnDef::new(File::ObjectId).binary_len(256).not_null())
+          .col(ColumnDef::new(File::CommitId).binary_len(20).not_null())
+          .primary_key(Index::create().col(File::Path).col(File::CommitId))
           .foreign_key(
             ForeignKey::create()
               .name("FK_file_to_object_id")
@@ -143,6 +128,7 @@ impl MigrationTrait for Migration {
 enum Object {
   Table,
   Id,
+  Size,
   Created,
 }
 
@@ -152,6 +138,7 @@ enum File {
   Path,
   ObjectId,
   CommitId,
+  Fallback,
 }
 
 #[derive(Iden)]

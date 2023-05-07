@@ -17,6 +17,8 @@ use tracing::{info, warn};
 pub(crate) struct DeployAction {
   #[clap(env = "VIEW_UPLOAD_DIR")]
   upload_dir: PathBuf,
+  #[clap(short, long, env = "VIEW_FALLBACK_FILE")]
+  fallback_file: Vec<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -30,6 +32,7 @@ struct FileData {
   path: String,
   #[serde(with = "ConstHexForm")]
   object_id: [u8; 32],
+  fallback: bool,
 }
 
 impl DeployAction {
@@ -63,6 +66,7 @@ impl DeployAction {
       }
 
       files.push(FileData {
+        fallback: self.fallback_file.contains(&buf),
         path: buf,
         object_id: hasher.finalize().into(),
       });

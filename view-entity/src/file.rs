@@ -5,11 +5,11 @@ use sea_orm::prelude::*;
 pub struct Model {
   #[sea_orm(primary_key)]
   pub path: String,
-  #[sea_orm(primary_key)]
   pub object_id: Vec<u8>,
   //[u8; 64],
   #[sea_orm(primary_key)]
   pub commit_id: Vec<u8>, //[u8; 20],
+  pub fallback: bool,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

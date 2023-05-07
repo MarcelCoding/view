@@ -10,7 +10,8 @@ use hex::FromHex;
 use hex_buffer_serde::{ConstHex, ConstHexForm};
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
-  DatabaseConnection, DatabaseTransaction, EntityTrait, PaginatorTrait, TransactionTrait,
+  ActiveModelTrait, DatabaseConnection, DatabaseTransaction, EntityTrait, IntoActiveModel, NotSet,
+  PaginatorTrait, TransactionTrait,
 };
 use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
@@ -44,6 +45,7 @@ struct FileData {
   path: String,
   #[serde(with = "ConstHexForm")]
   object_id: [u8; 32],
+  fallback: bool,
 }
 
 #[debug_handler]
@@ -98,6 +100,7 @@ async fn commit_endpoint(
     if object_is_new {
       let object = object::ActiveModel {
         id: Set(file.object_id.to_vec()),
+        size: NotSet,
         created: Set(OffsetDateTime::now_utc()),
       };
 
@@ -109,6 +112,7 @@ async fn commit_endpoint(
       path: Set(file.path),
       object_id: Set(file.object_id.to_vec()),
       commit_id: Set(id.to_vec()),
+      fallback: Set(file.fallback),
     };
 
     file::Entity::insert(file).exec(tx).await?;
@@ -123,16 +127,30 @@ async fn object(
   Path(id): Path<String>,
   multipart: Multipart,
 ) -> Result<(), StatusCode> {
-  object_endpoint(state.db, state.root_dir, id, multipart)
-    .await
-    .map_err(|err| {
+  let result = match state.db.begin().await {
+    Ok(tx) => {
+      match object_endpoint(&tx, state.root_dir, id.to_ascii_lowercase(), multipart).await {
+        Ok(_) => {
+          tx.commit().await.unwrap();
+          Ok(())
+        }
+        Err(err) => Err(err),
+      }
+    }
+    Err(err) => Err::<_, anyhow::Error>(err.into()),
+  };
+
+  match result {
+    Ok(_) => Ok(()),
+    Err(err) => {
       eprint!("Error: {:?}", err);
-      StatusCode::INTERNAL_SERVER_ERROR
-    })
+      Err(StatusCode::INTERNAL_SERVER_ERROR)
+    }
+  }
 }
 
 async fn object_endpoint(
-  db: DatabaseConnection,
+  tx: &DatabaseTransaction,
   root_dir: PathBuf,
   input_id: String,
   mut multipart: Multipart,
@@ -143,9 +161,10 @@ async fn object_endpoint(
 
   let id = <[u8; 32]>::from_hex(&input_id)?;
 
-  if object::Entity::find_by_id(id).count(&db).await? == 0 {
-    return Err(anyhow!("object not found"));
-  }
+  let mut object = match object::Entity::find_by_id(id).one(tx).await? {
+    Some(object) => object.into_active_model(),
+    None => return Err(anyhow!("object not found")),
+  };
 
   let path = root_dir.join(&input_id[0..2]).join(&input_id[2..]);
   if let Some(parent) = path.parent() {
@@ -154,16 +173,24 @@ async fn object_endpoint(
     }
   }
 
-  let mut file = File::create(path).await?;
+  let mut size = 0;
 
-  let mut field = multipart
-    .next_field()
-    .await?
-    .ok_or_else(|| anyhow!("Expected file to upload"))?;
+  {
+    let mut file = File::create(path).await?;
 
-  while let Some(chunk) = field.chunk().await? {
-    file.write_all(chunk.as_ref()).await?;
+    let mut field = multipart
+      .next_field()
+      .await?
+      .ok_or_else(|| anyhow!("Expected file to upload"))?;
+
+    while let Some(chunk) = field.chunk().await? {
+      size += chunk.len();
+      file.write_all(chunk.as_ref()).await?;
+    }
   }
+
+  object.size = Set(Some(size as i64));
+  object.update(tx).await?;
 
   Ok(())
 }
