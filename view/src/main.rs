@@ -59,6 +59,8 @@ struct Args {
   serve_addr: SocketAddr,
   #[clap(short, long, env = "VIEW_MGNT_ADDR", default_value = "0.0.0.0:8081")]
   mgnt_addr: SocketAddr,
+  #[clap(short = 't', long, env = "VIEW_MGNT_TOKEN")]
+  mgnt_token: String,
 }
 
 #[tokio::main]
@@ -90,7 +92,7 @@ async fn main() -> anyhow::Result<()> {
   };
 
   tokio::spawn(async move {
-    let mgnt = hyper::Server::bind(&args.mgnt_addr).serve(router(state));
+    let mgnt = hyper::Server::bind(&args.mgnt_addr).serve(router(state, &args.mgnt_token));
 
     info!("Management is listening on http://{}...", args.mgnt_addr);
 

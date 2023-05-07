@@ -1,8 +1,10 @@
+use std::iter::once;
 use std::path::PathBuf;
 
 use anyhow::anyhow;
 use axum::body::Body;
 use axum::extract::{Multipart, Path, State};
+use axum::http::header::AUTHORIZATION;
 use axum::http::StatusCode;
 use axum::routing::{put, IntoMakeService};
 use axum::{debug_handler, Json, Router};
@@ -17,6 +19,8 @@ use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use tower_http::sensitive_headers::SetSensitiveRequestHeadersLayer;
+use tower_http::validate_request::ValidateRequestHeaderLayer;
 
 use view_entity::{commit, file, object};
 
@@ -26,10 +30,12 @@ pub struct ManagementState {
   pub root_dir: PathBuf,
 }
 
-pub fn router(state: ManagementState) -> IntoMakeService<Router<(), Body>> {
+pub fn router(state: ManagementState, token: &str) -> IntoMakeService<Router<(), Body>> {
   Router::new()
     .route("/v1/commit/:id", put(commit))
     .route("/v1/object/:id", put(object))
+    .layer(ValidateRequestHeaderLayer::bearer(token))
+    .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
     .with_state(state)
     .into_make_service()
 }
