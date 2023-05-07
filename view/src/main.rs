@@ -56,11 +56,11 @@ impl<T> Service<T> for MakeSvc {
 struct Cli {
   #[clap(short, long, env = "VIEW_DB_URL")]
   db_url: Url,
-  #[clap(long, env = "VIEW_DB_USER", required_unless_present = "db_user_path")]
+  #[clap(short = 'u', long, env = "VIEW_DB_USER", required_unless_present = "db_user_path")]
   db_user: Option<String>,
   #[clap(long, env = "VIEW_DB_USER_PATH", required_unless_present = "db_user")]
   db_user_path: Option<PathBuf>,
-  #[clap(long, env = "VIEW_DB_PASS", required_unless_present = "db_pass_path")]
+  #[clap(short = 'p', long, env = "VIEW_DB_PASS", required_unless_present = "db_pass_path")]
   db_pass: Option<String>,
   #[clap(long, env = "VIEW_DB_PASS_PATH", required_unless_present = "db_pass")]
   db_pass_path: Option<PathBuf>,
