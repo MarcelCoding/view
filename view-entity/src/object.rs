@@ -7,7 +7,8 @@ pub struct Model {
   #[sea_orm(primary_key)]
   pub id: Vec<u8>,
   //Vec<u8>, //[u8; 64],
-  pub size: Option<i64>, // postgres does not support u64
+  pub size: Option<i64>,
+  // postgres does not support u64
   pub created: OffsetDateTime,
 }
 

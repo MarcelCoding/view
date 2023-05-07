@@ -8,7 +8,8 @@ pub struct Model {
   pub object_id: Vec<u8>,
   //[u8; 64],
   #[sea_orm(primary_key)]
-  pub commit_id: Vec<u8>, //[u8; 20],
+  pub commit_id: Vec<u8>,
+  //[u8; 20],
   pub fallback: bool,
 }
 

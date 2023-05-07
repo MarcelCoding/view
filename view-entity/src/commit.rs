@@ -5,7 +5,8 @@ use time::OffsetDateTime;
 #[sea_orm(table_name = "commit")]
 pub struct Model {
   #[sea_orm(primary_key)]
-  pub id: Vec<u8>, //[u8; 20],
+  pub id: Vec<u8>,
+  //[u8; 20],
   #[sea_orm(column_type = "Text")]
   pub description: String,
   pub created: OffsetDateTime,

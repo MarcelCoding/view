@@ -6,6 +6,8 @@ use url::Url;
 use crate::action::Action;
 
 mod action;
+mod client;
+mod git;
 
 #[derive(Parser)]
 #[command(version)]

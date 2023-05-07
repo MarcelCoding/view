@@ -1,17 +1,13 @@
 use std::path::PathBuf;
 
-use crate::GeneralArgs;
 use clap::Args;
-use hex_buffer_serde::{ConstHex, ConstHexForm};
-use reqwest::multipart::{Form, Part};
-use reqwest::{Body, Client};
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::fs::File;
 use tokio::io::AsyncReadExt;
-use tokio::process::Command;
-use tokio_util::codec::{BytesCodec, FramedRead};
 use tracing::{info, warn};
+
+use crate::client::{FileData, ViewClient};
+use crate::git::{get_commit_description, get_commit_id};
 
 #[derive(Args)]
 pub(crate) struct DeployAction {
@@ -21,22 +17,8 @@ pub(crate) struct DeployAction {
   fallback: Vec<String>,
 }
 
-#[derive(Serialize, Clone)]
-struct CommitData<'a> {
-  description: String,
-  files: &'a [FileData],
-}
-
-#[derive(Deserialize, Serialize, Clone)]
-struct FileData {
-  path: String,
-  #[serde(with = "ConstHexForm")]
-  object_id: [u8; 32],
-  fallback: bool,
-}
-
 impl DeployAction {
-  pub(crate) async fn execute(self, general: GeneralArgs) -> anyhow::Result<()> {
+  pub(crate) async fn execute(self, client: ViewClient) -> anyhow::Result<()> {
     let paths = find_files(self.upload_dir.clone()).await?;
     info!("Found {} files to upload", paths.len());
 
@@ -72,45 +54,13 @@ impl DeployAction {
       });
     }
 
-    let commit_id = String::from_utf8(
-      Command::new("git")
-        .arg("rev-parse")
-        .arg("HEAD")
-        .output()
-        .await?
-        .stdout,
-    )?;
-
-    let commit_id = commit_id.trim();
+    let commit_id = get_commit_id().await?;
     info!("Publishing as commit {}...", commit_id);
 
-    let commit_description = String::from_utf8_lossy(
-      &Command::new("git")
-        .arg("log")
-        .arg("--format=%B")
-        .arg("-n")
-        .arg("1")
-        .arg(commit_id)
-        .output()
-        .await?
-        .stdout,
-    )
-    .trim()
-    .to_string();
-
-    let client = Client::new();
+    let commit_description = get_commit_description(&commit_id).await?;
 
     let objects_to_upload = client
-      .put(general.url.join(&format!("v1/commit/{}", commit_id))?)
-      .bearer_auth(&general.token)
-      .json(&CommitData {
-        description: commit_description,
-        files: &files,
-      })
-      .send()
-      .await?
-      .error_for_status()?
-      .json::<Vec<FileData>>()
+      .put_commit(&commit_id, &commit_description, &files)
       .await?;
 
     for FileData { object_id, .. } in objects_to_upload {
@@ -123,24 +73,8 @@ impl DeployAction {
             .join(&*urlencoding::decode(&object.path[1..])?),
         )
         .await?;
-        let len = file.metadata().await?.len();
 
-        let stream = FramedRead::new(file, BytesCodec::new());
-
-        let part = Part::stream_with_length(Body::wrap_stream(stream), len);
-        let form = Form::new().part("file", part);
-
-        let url = general
-          .url
-          .join(&format!("v1/object/{}", hex::encode(object_id)))?;
-
-        client
-          .put(url)
-          .bearer_auth(&general.token)
-          .multipart(form)
-          .send()
-          .await?
-          .error_for_status()?;
+        client.put_object(&hex::encode(object_id), file).await?;
       }
     }
 
