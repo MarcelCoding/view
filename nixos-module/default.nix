@@ -120,10 +120,10 @@ in
         "view" = {
           enable = true;
           wantedBy = [ "multi-user.target" ];
-          after = ["postgresql.service" "view-setup.service"];
+          after = [ "postgresql.service" "view-setup.service" ];
 
           script = ''
-              exec ${pkgs.view}/bin/view&
+            exec ${pkgs.view}/bin/view&
           '';
 
           environment = {

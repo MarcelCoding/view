@@ -24,7 +24,11 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
 
-          package = pkgs.callPackage ./derivation.nix {
+          package-latest = pkgs.callPackage ./derivation.nix {
+            naersk = naersk.lib.${system};
+          };
+
+          package-stable = pkgs.callPackage ./derivation-stable.nix {
             naersk = naersk.lib.${system};
           };
 
@@ -34,8 +38,9 @@
         rec {
           checks = packages;
           packages = {
-            view = package;
-            default = package;
+            view = package-latest;
+            view-stable = package-stable;
+            default = package-latest;
           };
 
           devShells.default = pkgs.mkShell {
@@ -50,7 +55,7 @@
       ) // {
       overlays.default = final: prev: {
         inherit (self.packages.${prev.system})
-          view;
+          view view-stable;
       };
 
       nixosModules = rec {
